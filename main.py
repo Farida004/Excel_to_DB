@@ -20,7 +20,9 @@ import pymysql
 
 excel_files_list = [".xls", ".xlsx", ".xlsm", ".xlsb", ".xltx",
                     ".xltm", ".xlt", ".xml", ".xlam", ".xla", ".xlw", ".xlr"]
-charts_list = []
+charts_dictionary = {
+	0:""
+}
 fname = ""
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 
@@ -164,24 +166,28 @@ def chart_buttons_return(value):
 	if value is not None:
 		global df
 		df = pd.read_sql(f"select * from test.`{value}`", dbConnection)
-		df['Created On'] = pd.to_datetime(df['Created On'], format='%d.%m.%Y')
+		# df['Created On'] = pd.to_datetime(df['Created On'], format='%d.%m.%Y')
 		return	[
 					html.Button(id='pie_button', 
 						children=[html.Img(src='./assets/pie-chart.png',
 									style={"width":"40px","height":"40px"})],
-						style={"width":"60px","height":"60px","padding":"10px", "margin-right":"15px"}, n_clicks=0),
+						style={"width":"60px","height":"60px","padding":"10px", "margin-right":"15px"}, n_clicks=0,
+						title='Pie Chart'),
 					html.Button(id='bar_button',  
 						children=[html.Img(src='./assets/bar-chart.png',
 									style={"width":"40px","height":"40px"})],
-						style={"width":"60px","height":"60px","padding":"10px", "margin-right":"15px"}, n_clicks=0),
+						style={"width":"60px","height":"60px","padding":"10px", "margin-right":"15px"}, n_clicks=0,
+						title='Bar Chart'),
 					html.Button(id='line_button', 
 						children=[html.Img(src='./assets/line-chart.png',
 									style={"width":"40px","height":"40px"})],
-						style={"width":"60px","height":"60px","padding":"10px", "margin-right":"15px"}, n_clicks=0),
+						style={"width":"60px","height":"60px","padding":"10px", "margin-right":"15px"}, n_clicks=0,
+						title='Line Chart'),
 					html.Button(id='clear_button', 
 						children=[html.Img(src='./assets/clear.png',
 									style={"width":"40px","height":"40px"})],
-						style={"width":"60px","height":"60px","padding":"9px", "margin-right":"15px"}, n_clicks=0),
+						style={"width":"60px","height":"60px","padding":"9px", "margin-right":"15px"}, n_clicks=0,
+						title='Clear All'),
 					]
 
 
@@ -191,27 +197,60 @@ def chart_buttons_return(value):
 			  [Input('line_button', 'n_clicks')],
 			  [Input('clear_button', 'n_clicks')])
 def charts_return(btn1, btn2, btn3, btn4):
+	global charts_dictionary
 	changed_id = [p['prop_id'] for p in callback_context.triggered][0]
 	# specific features
+	columns = list(df.columns)
+	charts_dict_index = len(charts_dictionary)
 	if 'pie_button' in changed_id:
-		charts_list.append(html.Div(
+		charts_dictionary[charts_dict_index] = html.Div(
 					children = [
+						html.Button("+",id='close_button',
+						style={
+							# "color":"white",
+							"font-size": "40px",
+  							"font-weight": "300",
+							"padding":'0',
+							"border":"None",
+							# "display": "inline-block",
+							"transform": "rotate(45deg)",
+							"position": "absolute",
+							"top": "5px",
+							"right": "5px"},
+							value='1'),
 						html.P(
-							children = "Select Processor: ",
+							children = "Select Target Column: ",
 							className = "fix_label",
 							style = {
 								"color": "white"
 							}
 						),
 						dcc.Dropdown(
-							id = "w_countries",
+							id = "pie_chart_target",
 							multi = False,
 							searchable = True,
-							value = "Elvin Yusifli",
-							placeholder = "Select Processor",
+							value = None,
+							placeholder = "...click to select...",
 							options = 
-							# ["a","b","c"]
-							[{"label": c, "value": c} for c in (df.Processor.unique())]
+							[{"label": c, "value": c} for c in columns]
+							,
+							className = "dcc_compon"
+						),
+						html.P(
+							children = "Select Slice Columns: ",
+							className = "fix_label",
+							style = {
+								"color": "white"
+							}
+						),
+						dcc.Dropdown(
+							id = "pie_chart_slice",
+							multi = True,
+							searchable = True,
+							value = None,
+							placeholder = "...click to select...",
+							options = 
+							[{"label": c, "value": c} for c in columns]
 							,
 							className = "dcc_compon"
 						),
@@ -222,14 +261,52 @@ def charts_return(btn1, btn2, btn3, btn4):
 								"displayModeBar": "hover"
 							}
 						)
+					
 					],
 					className = "create_container three columns",
 					style = {
-						"maxWidth": "350px"
-					}))
+						"maxWidth": "400px"})
+	
 	elif 'bar_button' in changed_id:
-		charts_list.append(html.Div(
+		charts_dictionary[charts_dict_index] = html.Div(
 					children = [
+						html.P(
+							children = "Select Y Column: ",
+							className = "fix_label",
+							style = {
+								"color": "white"
+							}
+						),
+						dcc.Dropdown(
+							id = "bar_chart_y",
+							multi = False,
+							searchable = True,
+							value = None,
+							placeholder = "...click to select...",
+							options = 
+							[{"label": c, "value": c} for c in columns]
+							,
+							className = "dcc_compon"
+						),
+						html.P(
+							children = "Select X Columns: ",
+							className = "fix_label",
+							style = {
+								"color": "white"
+							}
+						),
+						dcc.Dropdown(
+							id = "bar_chart_x",
+							multi = True,
+							searchable = True,
+							value = None,
+							placeholder = "...click to select...",
+							options = 
+							[{"label": c, "value": c} for c in columns]
+							,
+							className = "dcc_compon"
+						),
+
 						dcc.Graph(
 							id = "bar_chart",
 							config = {
@@ -238,10 +315,47 @@ def charts_return(btn1, btn2, btn3, btn4):
 						)
 					],
 					className = "create_container four columns"
-				))
+				)
 	elif 'line_button' in changed_id:
-		charts_list.append(html.Div(
+		charts_dictionary[charts_dict_index] = html.Div(
 					children = [
+						html.P(
+							children = "Select Y Column: ",
+							className = "fix_label",
+							style = {
+								"color": "white"
+							}
+						),
+						dcc.Dropdown(
+							id = "line_chart_y",
+							multi = False,
+							searchable = True,
+							value = None,
+							placeholder = "...click to select...",
+							options = 
+							[{"label": c, "value": c} for c in columns]
+							,
+							className = "dcc_compon"
+						),
+						html.P(
+							children = "Select X Columns: ",
+							className = "fix_label",
+							style = {
+								"color": "white"
+							}
+						),
+						dcc.Dropdown(
+							id = "line_chart_x",
+							multi = True,
+							searchable = True,
+							value = None,
+							placeholder = "...click to select...",
+							options = 
+							[{"label": c, "value": c} for c in columns]
+							,
+							className = "dcc_compon"
+						),
+
 						dcc.Graph(
 							id = "line_chart",
 							config = {
@@ -250,14 +364,14 @@ def charts_return(btn1, btn2, btn3, btn4):
 						)
 					],
 					className = "create_container five columns"
-				))
+				)
 
 	elif 'clear_button' in changed_id:
-		charts_list.clear()
+		charts_dictionary = {0:""}
 	else:
-		return [html.Div('None of the buttons have been clicked yet')]
+		return None
 	
-	return charts_list
+	return list(charts_dictionary.values())
 
 
 # Donut chart
@@ -267,22 +381,23 @@ def charts_return(btn1, btn2, btn3, btn4):
 		component_property = "figure"
 	),
 	Input(
-		component_id = "w_countries",
-		component_property = "value"
+		component_id = "pie_chart_target",
+		component_property = "value" #target - value1
+	),
+	Input(
+		component_id = "pie_chart_slice",
+		component_property = "value" #slices - value2
 	)
 )
-def update_pie_chart(w_countries):
-	# List of colors
+def update_pie_chart(value1, value2):
+	print(value1, value2)
 	colors = ["orange", "#dd1e35", "green"]
-	conf = df[df["Processor"]==w_countries]["Confirmed"].count()
-	cust = df[df["Processor"]==w_countries]["Customer Action"].count()
-	withd = df[df["Processor"]==w_countries]["Withdrawn"].count()
 	# Build the figure
 	fig = {
 		"data": [
 			go.Pie(
-				labels = ["Confirmed", "Customer Action", "Withdrawn"],
-				values = [conf, cust, withd],
+				labels = value2,
+				values = np.unique(df[value1]),
 				marker = {
 					"colors": colors
 				},
@@ -333,23 +448,27 @@ def update_pie_chart(w_countries):
 		component_property = "figure"
 	),
 	Input(
-		component_id = "w_countries",
+		component_id = "bar_chart_y",
+		component_property = "value"
+	),
+	Input(
+		component_id = "bar_chart_x",
 		component_property = "value"
 	)
 )
-def update_bar_chart(w_countries):
+def update_bar_chart(y, x):
 	# Build the figure
 	fig = {
 		"data": [
 			go.Bar(
-				x = df['Processor'],
-				y = df['MPT Percentage %'],
-				name = "Average MPT per Processor",
+				x = df[x],
+				y = df[y],
+				name = "Placeholder",
 				marker = {
 					"color": "orange"
 				},
-				hoverinfo = "text",
-				hovertemplate = "<b>Date</b>: %{x} <br><b>Average MPT per Processor</b>: %{y:,.0f}<extra></extra>"
+				# hoverinfo = "text",
+				# hovertemplate = "<b>Date</b>: %{x} <br><b>Average MPT per Processor</b>: %{y:,.0f}<extra></extra>"
 			),
 		],
 		"layout": go.Layout(
@@ -420,14 +539,14 @@ def update_bar_chart(w_countries):
 		component_property = "figure"
 	),
 	Input(
-		component_id = "w_countries",
+		component_id = "charts",
 		component_property = "value"
 	)
 )
-def update_line_chart(w_countries):
+def update_line_chart(charts):
 	# Build the figure
-	dat = df[df['Processor']==w_countries]['Created On']
-	incidents =  df[df['Processor']==w_countries]['IRT Percentage %']
+	dat = df[df['Processor']==charts]['Created On']
+	incidents =  df[df['Processor']==charts]['IRT Percentage %']
 	fig = {
 		"data": [
 			go.Scatter(
