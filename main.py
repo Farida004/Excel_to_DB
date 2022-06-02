@@ -191,14 +191,15 @@ def chart_buttons_return(value):
 
 @app.callback(Output('chart_container', 'children'),
 			  [Input('pie_button', 'n_clicks'),
-			  Input({"type": "dynamic-delete_pie", "index": ALL}, "n_clicks")],
-			  [Input('bar_button', 'n_clicks'),
+			  Input('bar_button', 'n_clicks'),
 			  Input('line_button', 'n_clicks'),
 			  Input('clear_button', 'n_clicks'),
-			  ],
+			  Input({"type": "dynamic-delete_pie", "index": ALL}, "n_clicks"),
+			  Input({"type": "dynamic-delete_bar", "index": ALL}, "n_clicks"),
+			  Input({"type": "dynamic-delete_line", "index": ALL}, "n_clicks"),],
 			  [State("chart_container", "children")])
-def charts_return(btn1, btn2, btn3, btn4, n_clicks, children):
-	print(type(n_clicks))
+def charts_return(btn1, c_pie,  btn2,c_bar, btn3,c_line, btn4,  children):
+	print(type(c_pie))
 	input_id = dash.callback_context.triggered[0]["prop_id"].split(".")[0]
 	print(input_id)
 	if "index" in input_id:
@@ -218,7 +219,7 @@ def charts_return(btn1, btn2, btn3, btn4, n_clicks, children):
 						children = [
 							html.Button(
 							"+",
-							id={"type": "dynamic-delete_pie", "index": n_clicks},
+							id={"type": "dynamic-delete_pie", "index": c_pie},
 							n_clicks=0,
 							style={
 								# "color":"white",
@@ -269,7 +270,7 @@ def charts_return(btn1, btn2, btn3, btn4, n_clicks, children):
 							),
 
 						dcc.Graph(
-									id = {"type": "pie_chart", "index": n_clicks},
+									id = "pie_chart",
 									# config = {
 									# 	"displayModeBar": "hover"
 									# }
@@ -285,7 +286,7 @@ def charts_return(btn1, btn2, btn3, btn4, n_clicks, children):
 						children = [
 							html.Button(
 							"+",
-							id={"type": "dynamic-delete", "index": n_clicks},
+							id={"type": "dynamic-delete_bar", "index": c_bar},
 							n_clicks=0,
 							style={
 								# "color":"white",
@@ -349,7 +350,7 @@ def charts_return(btn1, btn2, btn3, btn4, n_clicks, children):
 						children = [
 							html.Button(
 							"+",
-							id={"type": "dynamic-delete", "index": n_clicks},
+							id={"type": "dynamic-delete_line", "index": c_line},
 							n_clicks=0,
 							style={
 								# "color":"white",
