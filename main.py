@@ -2,11 +2,11 @@ import base64
 import datetime
 import io
 from click import style
-
+import json
 import dash
 import dash_bootstrap_components as dbc
 from dash import Input, Output, State, html, callback_context
-from dash.dependencies import Input, Output, State
+from dash.dependencies import Input, Output, State, ALL, MATCH
 from dash import dcc, html, dash_table
 from pathlib import Path
 import pandas as pd
@@ -20,9 +20,7 @@ import pymysql
 
 excel_files_list = [".xls", ".xlsx", ".xlsm", ".xlsb", ".xltx",
                     ".xltm", ".xlt", ".xml", ".xlam", ".xla", ".xlw", ".xlr"]
-charts_dictionary = {
-	0:""
-}
+# charts_list = []
 fname = ""
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 
@@ -149,7 +147,7 @@ children = [
     html.Br(),
 		
 	# Viz part
-    html.Div(id="test"),
+    html.Div(id="chart_container", children=[]),
 
 	],
 	id = "mainContainer",
@@ -191,195 +189,241 @@ def chart_buttons_return(value):
 					]
 
 
-@app.callback(Output('test', 'children'),
-			  [Input('pie_button', 'n_clicks')],
-			  [Input('bar_button', 'n_clicks')],
-			  [Input('line_button', 'n_clicks')],
-			  [Input('clear_button', 'n_clicks')])
-def charts_return(btn1, btn2, btn3, btn4):
-	global charts_dictionary
-	changed_id = [p['prop_id'] for p in callback_context.triggered][0]
-	# specific features
-	columns = list(df.columns)
-	charts_dict_index = len(charts_dictionary)
-	if 'pie_button' in changed_id:
-		charts_dictionary[charts_dict_index] = html.Div(
-					children = [
-						html.Button("+",id='close_button',
-						style={
-							# "color":"white",
-							"font-size": "40px",
-  							"font-weight": "300",
-							"padding":'0',
-							"border":"None",
-							# "display": "inline-block",
-							"transform": "rotate(45deg)",
-							"position": "absolute",
-							"top": "5px",
-							"right": "5px"},
-							value='1'),
-						html.P(
-							children = "Select Target Column: ",
-							className = "fix_label",
-							style = {
-								"color": "white"
-							}
-						),
-						dcc.Dropdown(
-							id = "pie_chart_target",
-							multi = False,
-							searchable = True,
-							value = None,
-							placeholder = "...click to select...",
-							options = 
-							[{"label": c, "value": c} for c in columns]
-							,
-							className = "dcc_compon"
-						),
-						html.P(
-							children = "Select Slice Columns: ",
-							className = "fix_label",
-							style = {
-								"color": "white"
-							}
-						),
-						dcc.Dropdown(
-							id = "pie_chart_slice",
-							multi = True,
-							searchable = True,
-							value = None,
-							placeholder = "...click to select...",
-							options = 
-							[{"label": c, "value": c} for c in columns]
-							,
-							className = "dcc_compon"
-						),
-						# Donut chart
-						dcc.Graph(
-							id = "pie_chart",
-							config = {
-								"displayModeBar": "hover"
-							}
-						)
-					
-					],
-					className = "create_container three columns",
-					style = {
-						"maxWidth": "400px"})
-	
-	elif 'bar_button' in changed_id:
-		charts_dictionary[charts_dict_index] = html.Div(
-					children = [
-						html.P(
-							children = "Select Y Column: ",
-							className = "fix_label",
-							style = {
-								"color": "white"
-							}
-						),
-						dcc.Dropdown(
-							id = "bar_chart_y",
-							multi = False,
-							searchable = True,
-							value = None,
-							placeholder = "...click to select...",
-							options = 
-							[{"label": c, "value": c} for c in columns]
-							,
-							className = "dcc_compon"
-						),
-						html.P(
-							children = "Select X Columns: ",
-							className = "fix_label",
-							style = {
-								"color": "white"
-							}
-						),
-						dcc.Dropdown(
-							id = "bar_chart_x",
-							multi = True,
-							searchable = True,
-							value = None,
-							placeholder = "...click to select...",
-							options = 
-							[{"label": c, "value": c} for c in columns]
-							,
-							className = "dcc_compon"
-						),
-
-						dcc.Graph(
-							id = "bar_chart",
-							config = {
-								"displayModeBar": "hover"
-							}
-						)
-					],
-					className = "create_container four columns"
-				)
-	elif 'line_button' in changed_id:
-		charts_dictionary[charts_dict_index] = html.Div(
-					children = [
-						html.P(
-							children = "Select Y Column: ",
-							className = "fix_label",
-							style = {
-								"color": "white"
-							}
-						),
-						dcc.Dropdown(
-							id = "line_chart_y",
-							multi = False,
-							searchable = True,
-							value = None,
-							placeholder = "...click to select...",
-							options = 
-							[{"label": c, "value": c} for c in columns]
-							,
-							className = "dcc_compon"
-						),
-						html.P(
-							children = "Select X Columns: ",
-							className = "fix_label",
-							style = {
-								"color": "white"
-							}
-						),
-						dcc.Dropdown(
-							id = "line_chart_x",
-							multi = True,
-							searchable = True,
-							value = None,
-							placeholder = "...click to select...",
-							options = 
-							[{"label": c, "value": c} for c in columns]
-							,
-							className = "dcc_compon"
-						),
-
-						dcc.Graph(
-							id = "line_chart",
-							config = {
-								"displayModeBar": "hover"
-							}
-						)
-					],
-					className = "create_container five columns"
-				)
-
-	elif 'clear_button' in changed_id:
-		charts_dictionary = {0:""}
+@app.callback(Output('chart_container', 'children'),
+			  [Input('pie_button', 'n_clicks'),
+			  Input({"type": "dynamic-delete_pie", "index": ALL}, "n_clicks")],
+			  [Input('bar_button', 'n_clicks'),
+			  Input('line_button', 'n_clicks'),
+			  Input('clear_button', 'n_clicks'),
+			  ],
+			  [State("chart_container", "children")])
+def charts_return(btn1, btn2, btn3, btn4, n_clicks, children):
+	print(type(n_clicks))
+	input_id = dash.callback_context.triggered[0]["prop_id"].split(".")[0]
+	print(input_id)
+	if "index" in input_id:
+		delete_chart = json.loads(input_id)["index"]
+		print(delete_chart)
+		children = [
+			chart
+			for chart in children
+			if "'index': " + str(delete_chart) not in str(chart)
+		]
 	else:
-		return None
-	
-	return list(charts_dictionary.values())
+		changed_id = [p['prop_id'] for p in callback_context.triggered][0]
+		# specific features
+		columns = list(df.columns)
+		if 'pie_button' in changed_id:
+			children.append(html.Div(
+						children = [
+							html.Button(
+							"+",
+							id={"type": "dynamic-delete_pie", "index": n_clicks},
+							n_clicks=0,
+							style={
+								# "color":"white",
+								"font-size": "40px",
+								"font-weight": "300",
+								"padding":'0',
+								"border":"None",
+								# "display": "inline-block",
+								"transform": "rotate(45deg)",
+								"position": "absolute",
+								"top": "5px",
+								"right": "5px"}),
+							html.P(
+								children = "Select Target Column: ",
+								className = "fix_label",
+								style = {
+									"color": "white"
+								}
+							),
+							dcc.Dropdown(
+								id = "pie_chart_target",
+								multi = False,
+								searchable = True,
+								value = None,
+								placeholder = "...click to select...",
+								options = 
+								[{"label": c, "value": c} for c in columns]
+								,
+								className = "dcc_compon"
+							),
+							html.P(
+								children = "Select Slice Columns: ",
+								className = "fix_label",
+								style = {
+									"color": "white"
+								}
+							),
+							dcc.Dropdown(
+								id = "pie_chart_slice",
+								multi = True,
+								searchable = True,
+								value = None,
+								placeholder = "...click to select...",
+								options = 
+								[{"label": c, "value": c} for c in columns]
+								,
+								className = "dcc_compon"
+							),
 
+						dcc.Graph(
+									id = {"type": "pie_chart", "index": n_clicks},
+									# config = {
+									# 	"displayModeBar": "hover"
+									# }
+							)
+						],
+						className = "create_container three columns",
+						style = {
+							# "maxWidth": "400px"
+							}))
+		
+		elif 'bar_button' in changed_id:
+			children.append(html.Div(
+						children = [
+							html.Button(
+							"+",
+							id={"type": "dynamic-delete", "index": n_clicks},
+							n_clicks=0,
+							style={
+								# "color":"white",
+								"font-size": "40px",
+								"font-weight": "300",
+								"padding":'0',
+								"border":"None",
+								# "display": "inline-block",
+								"transform": "rotate(45deg)",
+								"position": "absolute",
+								"top": "5px",
+								"right": "5px"}),
+							html.P(
+								children = "Select Y Column: ",
+								className = "fix_label",
+								style = {
+									"color": "white"
+								}
+							),
+							dcc.Dropdown(
+								id = "bar_chart_y",
+								multi = False,
+								searchable = True,
+								value = None,
+								placeholder = "...click to select...",
+								options = 
+								[{"label": c, "value": c} for c in columns]
+								,
+								className = "dcc_compon"
+							),
+							html.P(
+								children = "Select X Columns: ",
+								className = "fix_label",
+								style = {
+									"color": "white"
+								}
+							),
+							dcc.Dropdown(
+								id = "bar_chart_x",
+								multi = True,
+								searchable = True,
+								value = None,
+								placeholder = "...click to select...",
+								options = 
+								[{"label": c, "value": c} for c in columns]
+								,
+								className = "dcc_compon"
+							),
+
+							dcc.Graph(
+								id = "bar_chart",
+								config = {
+									"displayModeBar": "hover"
+								}
+							)
+						],
+						className = "create_container four columns"
+					))
+		elif 'line_button' in changed_id:
+			children.append(html.Div(
+						children = [
+							html.Button(
+							"+",
+							id={"type": "dynamic-delete", "index": n_clicks},
+							n_clicks=0,
+							style={
+								# "color":"white",
+								"font-size": "40px",
+								"font-weight": "300",
+								"padding":'0',
+								"border":"None",
+								# "display": "inline-block",
+								"transform": "rotate(45deg)",
+								"position": "absolute",
+								"top": "5px",
+								"right": "5px"}),
+							html.P(
+								children = "Select Y Column: ",
+								className = "fix_label",
+								style = {
+									"color": "white"
+								}
+							),
+							dcc.Dropdown(
+								id = "line_chart_y",
+								multi = False,
+								searchable = True,
+								value = None,
+								placeholder = "...click to select...",
+								options = 
+								[{"label": c, "value": c} for c in columns]
+								,
+								className = "dcc_compon"
+							),
+							html.P(
+								children = "Select X Columns: ",
+								className = "fix_label",
+								style = {
+									"color": "white"
+								}
+							),
+							dcc.Dropdown(
+								id = "line_chart_x",
+								multi = True,
+								searchable = True,
+								value = None,
+								placeholder = "...click to select...",
+								options = 
+								[{"label": c, "value": c} for c in columns]
+								,
+								className = "dcc_compon"
+							),
+
+							dcc.Graph(
+								id = "line_chart",
+								config = {
+									"displayModeBar": "hover"
+								}
+							)
+						],
+						className = "create_container five columns"
+					))
+
+		elif 'clear_button' in changed_id:
+			children.clear()
+		else:
+			return None
+	
+	return children
+
+
+def remove_chart(n_clicks, children):
+	input_id = dash.callback_context.triggered[0]["prop_id"].split(".")[0]
+	
 
 # Donut chart
 @app.callback(
-	Output(
-		component_id = "pie_chart",
-		component_property = "figure"
-	),
+	Output({"type": "pie_chart", "index": MATCH}, "figure"),
 	Input(
 		component_id = "pie_chart_target",
 		component_property = "value" #target - value1
@@ -438,6 +482,7 @@ def update_pie_chart(value1, value2):
 		)
 	}
 	# Return the figure
+
 	return fig
 
 
