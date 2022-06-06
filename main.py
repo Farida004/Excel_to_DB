@@ -17,6 +17,7 @@ import plotly.graph_objs as go
 import numpy as np
 from sqlalchemy import create_engine
 import pymysql
+import functions
 
 excel_files_list = [".xls", ".xlsx", ".xlsm", ".xlsb", ".xltx",
                     ".xltm", ".xlt", ".xml", ".xlam", ".xla", ".xlw", ".xlr"]
@@ -198,13 +199,16 @@ def chart_buttons_return(value):
 			  Input({"type": "dynamic-delete_bar", "index": ALL}, "n_clicks"),
 			  Input({"type": "dynamic-delete_line", "index": ALL}, "n_clicks"),],
 			  [State("chart_container", "children")])
-def charts_return(btn1, c_pie,  btn2,c_bar, btn3,c_line, btn4,  children):
-	print(type(c_pie))
+def charts_return(c_pie, c_bar,  c_line, b1,b2,b3,b4, children): #to be changed : b1-4 useless
+
+	print(c_pie)
+	print(c_bar)
+	print(c_line)
 	input_id = dash.callback_context.triggered[0]["prop_id"].split(".")[0]
-	print(input_id)
+	# print(input_id)
 	if "index" in input_id:
 		delete_chart = json.loads(input_id)["index"]
-		print(delete_chart)
+		# print(delete_chart)
 		children = [
 			chart
 			for chart in children
@@ -244,7 +248,7 @@ def charts_return(btn1, c_pie,  btn2,c_bar, btn3,c_line, btn4,  children):
 								multi = False,
 								searchable = True,
 								value = None,
-								placeholder = "...click to select...",
+								placeholder = "...click or type to select...",
 								options = 
 								[{"label": c, "value": c} for c in columns]
 								,
@@ -259,22 +263,17 @@ def charts_return(btn1, c_pie,  btn2,c_bar, btn3,c_line, btn4,  children):
 							),
 							dcc.Dropdown(
 								id = "pie_chart_slice",
-								multi = True,
+								multi = False,
 								searchable = True,
 								value = None,
-								placeholder = "...click to select...",
+								placeholder = "...click or type to select...",
 								options = 
 								[{"label": c, "value": c} for c in columns]
 								,
 								className = "dcc_compon"
 							),
+							html.Div(id="pie_chart_placeholder", children=[]),
 
-						dcc.Graph(
-									id = "pie_chart",
-									# config = {
-									# 	"displayModeBar": "hover"
-									# }
-							)
 						],
 						className = "create_container three columns",
 						style = {
@@ -300,7 +299,25 @@ def charts_return(btn1, c_pie,  btn2,c_bar, btn3,c_line, btn4,  children):
 								"top": "5px",
 								"right": "5px"}),
 							html.P(
-								children = "Select Y Column: ",
+								children = "Select X Column: ",
+								className = "fix_label",
+								style = {
+									"color": "white"
+								}
+							),
+							dcc.Dropdown(
+								id = "bar_chart_x",
+								multi = False,
+								searchable = True,
+								value = None,
+								placeholder = "...click or type to select...",
+								options = 
+								[{"label": c, "value": c} for c in columns]
+								,
+								className = "dcc_compon"
+							),
+							html.P(
+								children = "Select Y Columns: ",
 								className = "fix_label",
 								style = {
 									"color": "white"
@@ -311,38 +328,14 @@ def charts_return(btn1, c_pie,  btn2,c_bar, btn3,c_line, btn4,  children):
 								multi = False,
 								searchable = True,
 								value = None,
-								placeholder = "...click to select...",
+								placeholder = "...click or type to select...",
 								options = 
 								[{"label": c, "value": c} for c in columns]
 								,
 								className = "dcc_compon"
 							),
-							html.P(
-								children = "Select X Columns: ",
-								className = "fix_label",
-								style = {
-									"color": "white"
-								}
-							),
-							dcc.Dropdown(
-								id = "bar_chart_x",
-								multi = True,
-								searchable = True,
-								value = None,
-								placeholder = "...click to select...",
-								options = 
-								[{"label": c, "value": c} for c in columns]
-								,
-								className = "dcc_compon"
-							),
-
-							dcc.Graph(
-								id = "bar_chart",
-								config = {
-									"displayModeBar": "hover"
-								}
-							)
-						],
+							html.Div(id="bar_chart_placeholder", children=[]),
+							],
 						className = "create_container four columns"
 					))
 		elif 'line_button' in changed_id:
@@ -364,7 +357,25 @@ def charts_return(btn1, c_pie,  btn2,c_bar, btn3,c_line, btn4,  children):
 								"top": "5px",
 								"right": "5px"}),
 							html.P(
-								children = "Select Y Column: ",
+								children = "Select X Column: ",
+								className = "fix_label",
+								style = {
+									"color": "white"
+								}
+							),
+							dcc.Dropdown(
+								id = "line_chart_x",
+								multi = False,
+								searchable = True,
+								value = None,
+								placeholder = "...click or type to select...",
+								options = 
+								[{"label": c, "value": c} for c in columns]
+								,
+								className = "dcc_compon"
+							),
+							html.P(
+								children = "Select Y Columns: ",
 								className = "fix_label",
 								style = {
 									"color": "white"
@@ -375,37 +386,13 @@ def charts_return(btn1, c_pie,  btn2,c_bar, btn3,c_line, btn4,  children):
 								multi = False,
 								searchable = True,
 								value = None,
-								placeholder = "...click to select...",
+								placeholder = "...click or type to select...",
 								options = 
 								[{"label": c, "value": c} for c in columns]
 								,
 								className = "dcc_compon"
 							),
-							html.P(
-								children = "Select X Columns: ",
-								className = "fix_label",
-								style = {
-									"color": "white"
-								}
-							),
-							dcc.Dropdown(
-								id = "line_chart_x",
-								multi = True,
-								searchable = True,
-								value = None,
-								placeholder = "...click to select...",
-								options = 
-								[{"label": c, "value": c} for c in columns]
-								,
-								className = "dcc_compon"
-							),
-
-							dcc.Graph(
-								id = "line_chart",
-								config = {
-									"displayModeBar": "hover"
-								}
-							)
+							html.Div(id="line_chart_placeholder", children=[]),
 						],
 						className = "create_container five columns"
 					))
@@ -418,13 +405,9 @@ def charts_return(btn1, c_pie,  btn2,c_bar, btn3,c_line, btn4,  children):
 	return children
 
 
-def remove_chart(n_clicks, children):
-	input_id = dash.callback_context.triggered[0]["prop_id"].split(".")[0]
-	
-
 # Donut chart
 @app.callback(
-	Output({"type": "pie_chart", "index": MATCH}, "figure"),
+	Output("pie_chart_placeholder", "children"),
 	Input(
 		component_id = "pie_chart_target",
 		component_property = "value" #target - value1
@@ -435,14 +418,15 @@ def remove_chart(n_clicks, children):
 	)
 )
 def update_pie_chart(value1, value2):
-	print(value1, value2)
-	colors = ["orange", "#dd1e35", "green"]
+	# print(value1, value2)
+	colors = ["orange", "#dd1e35", "green","red", "cyan", "yellow", "magenta"]
 	# Build the figure
+	
 	fig = {
 		"data": [
 			go.Pie(
-				labels = value2,
-				values = np.unique(df[value1]),
+				labels = df[value1],
+				values = df[value2],
 				marker = {
 					"colors": colors
 				},
@@ -483,33 +467,34 @@ def update_pie_chart(value1, value2):
 		)
 	}
 	# Return the figure
-
-	return fig
+	graph = dcc.Graph(
+				id = "pie_chart",
+				figure = fig)
+	return graph
 
 
 # bar and bars chart
 @app.callback(
-	Output(
-		component_id = "bar_chart",
-		component_property = "figure"
+	Output("bar_chart_placeholder", "children"),
+	Input(
+		component_id = "bar_chart_x",
+		component_property = "value"
 	),
 	Input(
 		component_id = "bar_chart_y",
 		component_property = "value"
-	),
-	Input(
-		component_id = "bar_chart_x",
-		component_property = "value"
 	)
 )
-def update_bar_chart(y, x):
+def update_bar_chart(value1, value2):
 	# Build the figure
+	df_dict = functions.bar_dict(df, value1, value2, mode="sum") #to be changed : add another dropdown for count/sum
+
 	fig = {
 		"data": [
 			go.Bar(
-				x = df[x],
-				y = df[y],
-				name = "Placeholder",
+				x = list(df_dict.keys()),
+				y = list(df_dict.values()),
+				name = "Placeholder", #to be changed
 				marker = {
 					"color": "orange"
 				},
@@ -519,7 +504,7 @@ def update_bar_chart(y, x):
 		],
 		"layout": go.Layout(
 			title = {
-				"text": f"Total MPT cases: {df['MPT Percentage %'].count()}",
+				"text": f"test", #to be changed
 				"y": 0.93,
 				"x": 0.5,
 				"xanchor": "center",
@@ -577,27 +562,34 @@ def update_bar_chart(y, x):
 		)
 	}
 	# Return the figure
-	return fig
+	graph =  dcc.Graph(
+				id = "bar_chart",
+				figure=fig,
+				config = {
+					"displayModeBar": "hover"
+				}
+			)
+	return graph
 
 @app.callback(
-	Output(
-		component_id = "line_chart",
-		component_property = "figure"
-	),
+	Output("line_chart_placeholder", "children"),
 	Input(
-		component_id = "charts",
-		component_property = "value"
-	)
-)
-def update_line_chart(charts):
+	component_id = "line_chart_x",
+	component_property = "value"
+),
+Input(
+	component_id = "line_chart_y",
+	component_property = "value"
+))
+def update_line_chart(value1, value2):
+	print(value1, value2)
+	# df["Created On"] =  pd.to_datetime(df["Created On"], format='%d.%m.%Y')
 	# Build the figure
-	dat = df[df['Processor']==charts]['Created On']
-	incidents =  df[df['Processor']==charts]['IRT Percentage %']
 	fig = {
 		"data": [
 			go.Scatter(
-				x =   dat,   #[x.split('.')[2] for x in df['Created On']],
-				y = incidents,
+				x = df[value1],   #to be changed : add date option
+				y = df[value2],
 				name = "Incident Count",
 				mode = "lines+markers",
 				line = {
@@ -610,8 +602,8 @@ def update_line_chart(charts):
 		],
 		"layout": go.Layout(
 			title = {
-				"text": f"Total incidents: {incidents.count()}",
-				"y": 0.93,
+				"text": f"Total {value2}: {df[value2].sum()}", #to be changed : sum or count
+				"y": 0.93, 
 				"x": 0.5,
 				"xanchor": "center",
 				"yanchor": "top"
@@ -668,7 +660,14 @@ def update_line_chart(charts):
 		)
 	}
 	# Return the figure
-	return fig
+	graph = dcc.Graph(
+						id = "line_chart",
+						figure=fig,
+						config = {
+							"displayModeBar": "hover"
+						}
+					)
+	return graph
 
 def parse_contents(contents, filename, date):
     global fname
@@ -685,7 +684,7 @@ def parse_contents(contents, filename, date):
             # Assume that the user uploaded an excel file
             df = pd.read_excel(io.BytesIO(decoded))
     except Exception as e:
-        print(e)
+        # print(e)
         return html.Div([
             'There was an error processing this file.'
         ])
