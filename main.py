@@ -199,11 +199,8 @@ def chart_buttons_return(value):
 			  Input({"type": "dynamic-delete_bar", "index": ALL}, "n_clicks"),
 			  Input({"type": "dynamic-delete_line", "index": ALL}, "n_clicks"),],
 			  [State("chart_container", "children")])
-def charts_return(c_pie, c_bar,  c_line, b1,b2,b3,b4, children): #to be changed : b1-4 useless
+def charts_return(btn1, btn2, btn3, btn4, btn5, btn6, btn7, children): #to be changed : b1-4 useless
 
-	print(c_pie)
-	print(c_bar)
-	print(c_line)
 	input_id = dash.callback_context.triggered[0]["prop_id"].split(".")[0]
 	# print(input_id)
 	if "index" in input_id:
@@ -218,12 +215,12 @@ def charts_return(c_pie, c_bar,  c_line, b1,b2,b3,b4, children): #to be changed 
 		changed_id = [p['prop_id'] for p in callback_context.triggered][0]
 		# specific features
 		columns = list(df.columns)
-		if 'pie_button' in changed_id:
+		if 'pie_button' in changed_id and btn1>=1:
 			children.append(html.Div(
 						children = [
 							html.Button(
 							"+",
-							id={"type": "dynamic-delete_pie", "index": c_pie},
+							id={"type": "dynamic-delete_pie", "index": 0},
 							n_clicks=0,
 							style={
 								# "color":"white",
@@ -280,12 +277,12 @@ def charts_return(c_pie, c_bar,  c_line, b1,b2,b3,b4, children): #to be changed 
 							# "maxWidth": "400px"
 							}))
 		
-		elif 'bar_button' in changed_id:
+		elif 'bar_button' in changed_id  and btn2>=1 : 
 			children.append(html.Div(
 						children = [
 							html.Button(
 							"+",
-							id={"type": "dynamic-delete_bar", "index": c_bar},
+							id={"type": "dynamic-delete_bar", "index": 1},
 							n_clicks=0,
 							style={
 								# "color":"white",
@@ -338,12 +335,12 @@ def charts_return(c_pie, c_bar,  c_line, b1,b2,b3,b4, children): #to be changed 
 							],
 						className = "create_container four columns"
 					))
-		elif 'line_button' in changed_id:
+		elif 'line_button' in changed_id and btn3>=1:
 			children.append(html.Div(
 						children = [
 							html.Button(
 							"+",
-							id={"type": "dynamic-delete_line", "index": c_line},
+							id={"type": "dynamic-delete_line", "index": 2},
 							n_clicks=0,
 							style={
 								# "color":"white",
@@ -400,7 +397,7 @@ def charts_return(c_pie, c_bar,  c_line, b1,b2,b3,b4, children): #to be changed 
 		elif 'clear_button' in changed_id:
 			children.clear()
 		else:
-			return None
+			return []
 	
 	return children
 
