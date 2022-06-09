@@ -821,13 +821,12 @@ def display_page(pathname):
 
 def toNumeric(df):
 	columns = []
-	for col in df.columns:
+	for col in sorted(df.columns):
 		col_options = {"name": col, "id": col}
 		for value in df[col]:
 			if not (isinstance(value, str)):
 				col_options["type"] = "numeric"
 		columns.append(col_options)
-		print(columns)
 	return columns
 
 if __name__ == '__main__':
